@@ -83,16 +83,29 @@ def _acquire_win_mutex() -> bool | None:
         return None
 
 
-def _release_win_mutex() -> None:
+def _acquire_win_mutex() -> bool | None:
     global _win_mutex_handle
-    if _win_mutex_handle:
-        try:
-            kernel32 = ctypes.windll.kernel32
-            kernel32.ReleaseMutex(ctypes.c_void_p(_win_mutex_handle))
-            kernel32.CloseHandle(ctypes.c_void_p(_win_mutex_handle))
-        except Exception:
-            pass
-        _win_mutex_handle = None
+    try:
+        import hashlib
+        if bool(getattr(sys, "frozen", False)):
+            exe_path = str(Path(sys.executable).parent)
+        else:
+            exe_path = str(Path(__file__).resolve().parent)
+        folder_hash = hashlib.md5(exe_path.encode()).hexdigest()[:8]
+        mutex_name = f"Local\\TgWsProxy_{folder_hash}"
+        kernel32 = ctypes.windll.kernel32
+        kernel32.CreateMutexW.restype = ctypes.c_void_p
+        kernel32.CreateMutexW.argtypes = [ctypes.c_void_p, ctypes.c_bool, ctypes.c_wchar_p]
+        handle = kernel32.CreateMutexW(None, True, mutex_name)
+        if kernel32.GetLastError() == _ERROR_ALREADY_EXISTS:
+            kernel32.CloseHandle(ctypes.c_void_p(handle))
+            return False
+        if not handle:
+            return None
+        _win_mutex_handle = handle
+        return True
+    except Exception:
+        return None
 
 ICON_PATH = str(Path(__file__).parent / "icon.ico")
 
