@@ -38,7 +38,7 @@ def _app_dir() -> Path:
 
 APP_DIR = _app_dir()
 CONFIG_FILE = APP_DIR / "config.json"
-LOG_FILE = APP_DIR / "proxy.log""
+LOG_FILE = APP_DIR / "proxy.log"
 FIRST_RUN_MARKER = APP_DIR / ".first_run_done_mtproto"
 IPV6_WARN_MARKER = APP_DIR / ".ipv6_warned"
 
